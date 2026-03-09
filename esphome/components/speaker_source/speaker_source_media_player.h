@@ -25,6 +25,7 @@ namespace speaker_source {
 
 enum Pipeline : uint8_t {
   MEDIA_PIPELINE = 0,
+  ANNOUNCEMENT_PIPELINE = 1,
 };
 
 enum RepeatMode : uint8_t {
@@ -57,7 +58,7 @@ struct SourceBinding : public media_source::MediaSourceListener {
 
 struct PipelineContext {
   /// @brief Timeout IDs for playlist delay, indexed by Pipeline enum
-  static constexpr const char *const TIMEOUT_IDS[] = {"next_media"};
+  static constexpr const char *const TIMEOUT_IDS[] = {"next_media", "next_ann"};
 
   speaker::Speaker *speaker{nullptr};
   optional<media_player::MediaPlayerSupportedFormat> format;
@@ -204,13 +205,13 @@ class SpeakerSourceMediaPlayer : public Component, public media_player::MediaPla
 
   QueueHandle_t media_control_command_queue_;
 
-  // Pipeline context for media pipeline
-  // Threading: Most pipeline access is from the main loop thread (loop, handle_media_state_changed_ via the media
-  // source listener contract). Two callbacks cross threads:
+  // Pipeline context for media (index 0) and announcement (index 1) pipelines
+  // Threading: Most pipeline access is from the main loop thread (loop, process_control_queue_,
+  // handle_media_state_changed_ via the media source listener contract). Two callbacks cross threads:
   //   - handle_media_output_: called from media source tasks (writes audio to speaker)
   //   - handle_speaker_playback_callback_: called from the speaker callback task
   // These only touch active_source and pending_frames, both atomic. No mutex needed.
-  std::array<PipelineContext, 1> pipelines_;
+  std::array<PipelineContext, 2> pipelines_;
 
   // Used to save volume/mute state for restoration on reboot
   ESPPreferenceObject pref_;
