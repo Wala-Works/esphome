@@ -179,14 +179,13 @@ class SpeakerSourceMediaPlayer : public Component, public media_player::MediaPla
   /// @brief Saves the current volume and mute state to the flash for restoration.
   void save_volume_restore_state_();
 
-  /// @brief Determine media player state from the media pipeline's active source
-  /// @param media_source Active source for the media pipeline (may be nullptr)
-  /// @param playlist_active Whether the media pipeline's playlist is in progress
+  /// @brief Determine media player state from a pipeline's active source
+  /// @param media_source Active source (may be nullptr)
+  /// @param playlist_active Whether the pipeline's playlist is in progress
   /// @param old_state Previous media player state (used for transition smoothing)
   /// @return The appropriate MediaPlayerState
-  media_player::MediaPlayerState get_media_pipeline_state_(media_source::MediaSource *media_source,
-                                                           bool playlist_active,
-                                                           media_player::MediaPlayerState old_state) const;
+  media_player::MediaPlayerState get_source_state_(media_source::MediaSource *media_source, bool playlist_active,
+                                                   media_player::MediaPlayerState old_state) const;
 
   void process_control_queue_();
   bool try_execute_play_uri_(const std::string &uri, uint8_t pipeline);
