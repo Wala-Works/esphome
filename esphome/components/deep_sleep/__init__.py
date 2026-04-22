@@ -14,6 +14,7 @@ from esphome.components.esp32 import (
     VARIANT_ESP32S3,
     get_esp32_variant,
 )
+from esphome.components.zephyr import zephyr_add_prj_conf
 from esphome.config_helpers import filter_source_files_from_platform
 import esphome.config_validation as cv
 from esphome.const import (
@@ -33,6 +34,7 @@ from esphome.const import (
     PLATFORM_BK72XX,
     PLATFORM_ESP32,
     PLATFORM_ESP8266,
+    PLATFORM_NRF52,
     PlatformFramework,
 )
 from esphome.core import CORE
@@ -265,7 +267,7 @@ CONFIG_SCHEMA = cv.All(
             ),
             cv.Optional(CONF_WAKEUP_PIN): validate_wakeup_pin,
             cv.Optional(CONF_WAKEUP_PIN_MODE): cv.All(
-                cv.only_on([PLATFORM_ESP32, PLATFORM_BK72XX]),
+                cv.only_on([PLATFORM_ESP32, PLATFORM_BK72XX, PLATFORM_NRF52]),
                 cv.enum(WAKEUP_PIN_MODES, upper=True),
             ),
             cv.Optional(CONF_ESP32_EXT1_WAKEUP): cv.All(
@@ -304,7 +306,7 @@ CONFIG_SCHEMA = cv.All(
             ),
         }
     ).extend(cv.COMPONENT_SCHEMA),
-    cv.only_on([PLATFORM_ESP32, PLATFORM_ESP8266, PLATFORM_BK72XX]),
+    cv.only_on([PLATFORM_ESP32, PLATFORM_ESP8266, PLATFORM_BK72XX, PLATFORM_NRF52]),
     validate_config,
 )
 
@@ -369,6 +371,13 @@ async def to_code(config):
 
     if CONF_TOUCH_WAKEUP in config:
         cg.add(var.set_touch_wakeup(config[CONF_TOUCH_WAKEUP]))
+
+    if CORE.is_nrf52:
+        # Zephyr Kconfig required for sys_poweroff(), sys_reboot() and device PM.
+        zephyr_add_prj_conf("POWEROFF", True)
+        zephyr_add_prj_conf("REBOOT", True)
+        zephyr_add_prj_conf("PM", True)
+        zephyr_add_prj_conf("PM_DEVICE", True)
 
     cg.add_define("USE_DEEP_SLEEP")
 
@@ -452,5 +461,6 @@ FILTER_SOURCE_FILES = filter_source_files_from_platform(
         },
         "deep_sleep_esp8266.cpp": {PlatformFramework.ESP8266_ARDUINO},
         "deep_sleep_bk72xx.cpp": {PlatformFramework.BK72XX_ARDUINO},
+        "deep_sleep_nrf52.cpp": {PlatformFramework.NRF52_ZEPHYR},
     }
 )
